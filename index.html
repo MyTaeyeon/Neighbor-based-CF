@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Recommended Movies</title>
+</head>
+<body>
+
+    <h2>Search for a Movie</h2>
+    <form action="/search" method="post">
+        <input type="text" name="query" placeholder="Enter movie title">
+        <input type="submit" value="Search">
+    </form>
+    
+
+    {% if show_recommended_movies %}
+        <h1>Recommended Movies</h1>
+        <ul>
+            {% for movie in recommended_movies %}
+                <li>{{ movie.title }} - Rating: {{ movie.rating }}</li>
+            {% endfor %}
+        </ul>
+    {% endif %}
+
+    {% if query %}
+        <h2>Search Results for "{{ query }}"</h2>
+        <ul>
+            {% for movie in results %}
+                <li>{{ movie.title }} - Rating: {{ movie.rating }}</li>
+            {% endfor %}
+        </ul>
+    {% endif %}
+
+    
+</body>
+</html>
