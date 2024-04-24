@@ -67,3 +67,17 @@ nav i:hover {
     padding: 0 10px;
     font-size: 25px;
 }
+
+table {
+    margin: auto;
+    width: 70%;
+    border-collapse: collapse;
+}
+th, td {
+    padding: 18px;
+    text-align: left;
+    border-bottom: 1px solid #ddd;
+}
+th {
+    background-color: #f2f2f2;
+}

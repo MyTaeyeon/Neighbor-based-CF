@@ -1,22 +1,13 @@
 import numpy as np
 from sklearn.metrics.pairwise import cosine_similarity
 
-X = np.nan
-R = np.array([
-    [5, 5, 2, 0, 1, X, X], #  
-    [4, X, X, 0, X, 2, X], #
-    [X, 4, 1, X, X, 1, 1], # item
-    [2, 2, 3, 4, 4, X, 4], # 
-    [2, 0, 4, X, X, X, 5]  #
-   #       user 
-])
-
 class CF(object):
-    def __init__(self, R):
+    def __init__(self, R, k):
         self.ori_data = R.copy()
         self.data = R.copy()
         self.n, self.m = self.data.shape
-        self.kneighbors = 2 # set kneighbor here
+        self.kneighbors = k # set kneighbor here
+        self.max_rmd = 13
     
     def __normalize(self):
         self.row_means = np.nanmean(self.data, axis=1)
@@ -41,17 +32,14 @@ class CF(object):
         weighted_sum = np.sum([self.S[i, v] * self.data[v, u] for v in rated_items])
         sum_of_weights = np.sum([np.abs(self.S[i, v]) for v in rated_items]) + 1e-8
         
-        return weighted_sum / sum_of_weights
+        return weighted_sum / sum_of_weights + self.row_means[u]
 
     def recommend(self, u):
         recommended_items = []
         for i in range(self.n):
+            if len(recommended_items) > self.max_rmd: break
             if np.isnan(self.ori_data[i, u]):
                 rating = self.predict(u, i)
-                if rating > 0:
-                    recommended_items.append(i)
-        return recommended_items
-
-cf = CF(R)
-cf.fit()
-print(cf.predict(0, 2))
+                if rating > self.row_means[u]:
+                    recommended_items.append({"item": i, "rating":rating})
+        return sorted(recommended_items, key=lambda x: x['rating'], reverse=True)
