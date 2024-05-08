@@ -44,6 +44,12 @@
             font-size: 50px; 
             cursor: pointer;
         }
+        button {
+            margin-top: 20px;
+            padding: 15px 30px;
+            letter-spacing: 1px;
+            font-size: 20px;
+        }
     </style>
 </head>
 <body>
@@ -64,6 +70,7 @@
             </div>
             <input type="hidden" name="rate_score" id="rate_score" value="{{ rate }}">
             <button type="submit" id="ratingButton">Rating</button>
+            <p style="margin-top: 20px; font-size: 25px; color: rgb(120, 54, 32);">{{ numbers }} people have rated it</p>
         </form>
     </main>
 
