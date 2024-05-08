@@ -1,4 +1,4 @@
-# Libarary
+# Library
     numpy, pandas, scikit-learn, flask
 
 # Peparation
