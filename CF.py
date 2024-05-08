@@ -41,5 +41,5 @@ class CF(object):
             if np.isnan(self.ori_data[i, u]):
                 rating = self.predict(u, i)
                 if rating > self.row_means[u]:
-                    recommended_items.append({"item": i, "rating":rating})
+                    recommended_items.append({"index": i, "rating":rating})
         return sorted(recommended_items, key=lambda x: x['rating'], reverse=True)
