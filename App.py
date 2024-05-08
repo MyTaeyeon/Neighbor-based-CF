@@ -14,7 +14,7 @@ columns = ['Movie_id', 'Movie_name', 'Year', 'none', 'links', '0', '1', '2', '3'
 movies = pd.read_csv("./ml-100k/u.item", sep='|', names=columns, encoding='latin-1')
 
 last_movie = 0
-user_id = 2
+user_id = 10
 genre = ("Unknown", "Action", "Adventure", "Animation", "Children's", "Comedy", "Crime", "Documentary", "Drama", "Fantasy", "Film-Noir", "Horror", "Musical", "Mystery", "Romance", "Sci-Fi", "Thriller", "War", "Western")
 
 @app.route('/detail/<string:movie_index>')
@@ -23,8 +23,9 @@ def movie_detail(movie_index):
     movie_index = int(movie_index)
     last_movie = movie_index
     movie_name = movies.iloc[movie_index]['Movie_name']
+    rate = 0 if np.isnan(ratings_matrix[last_movie][user_id]) else ratings_matrix[last_movie][user_id]
     tags = [genre[i] for i in range(19) if movies[str(i)][movie_index] == 1]
-    return render_template('movie_detail.html', movie_name=movie_name, tags=tags)
+    return render_template('movie_detail.html', movie_name=movie_name, tags=tags, rate=rate)
 
 @app.route('/rate', methods=['POST'])
 def rate_movie():
