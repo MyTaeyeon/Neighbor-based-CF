@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Recommendation System</title>
+
+    <style>
+        a {
+            text-decoration: none;
+            color: black;
+        }
+        main {
+            width: 70vw; 
+            height: 50vh; 
+            position: absolute; 
+            top: 50%; 
+            left: 50%; 
+            transform: translate(-50%, -50%);
+            border: 1px solid black; 
+            border-radius: 10px;
+            text-align: center; 
+            padding: 20px; 
+        }
+
+        .tags {
+            margin-top: 10px; 
+        }
+
+        .tags span {
+            background-color: #f1f1f1; 
+            color: #333; 
+            padding: 5px 10px; 
+            border-radius: 5px; 
+            margin-right: 5px; 
+        }
+
+        .rating {
+            margin-top: 20px; 
+        }
+
+        .rating .star {
+            color: gray; 
+            font-size: 50px; 
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <main>
+        <h1 class="movie-name">{{ movie_name }}</h1>
+        <div class="tags">
+            {% for tag in tags %}
+                <span>{{ tag }}</span>
+            {% endfor %}
+        </div>
+        <form action="/rate" method="post">
+            <div class="rating">
+                <span class="star" data-value="1">&#9733;</span>
+                <span class="star" data-value="2">&#9733;</span>
+                <span class="star" data-value="3">&#9733;</span>
+                <span class="star" data-value="4">&#9733;</span>
+                <span class="star" data-value="5">&#9733;</span>
+            </div>
+            <input type="hidden" name="rate_score" id="rate_score" value="0">
+            <button type="submit" id="ratingButton">Rating</button>
+        </form>
+    </main>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const stars = document.querySelectorAll('.star');
+            const rateScoreInput = document.getElementById('rate_score');
+
+            stars.forEach(function(star, index) {
+                star.addEventListener('click', function() {
+                    stars.forEach(function(s, i) {
+                        s.style.color = 'gray';
+                    });
+
+                    for (let i = 0; i <= index; i++) {
+                        stars[i].style.color = 'gold';
+                    }
+
+                    // Cập nhật giá trị rate_score với giá trị tương ứng với số sao
+                    rateScoreInput.value = index + 1;
+                });
+            });
+        });
+
+        const ratingForm = document.querySelector('form');
+        ratingForm.addEventListener('submit', function(event) {
+            event.preventDefault(); 
+            const formData = new FormData(ratingForm);
+            const xhr = new XMLHttpRequest();
+            xhr.open('POST', '/rate');
+            xhr.send(formData);
+            window.location.href = '/'; 
+        });
+
+    </script>
+</body>
+</html>

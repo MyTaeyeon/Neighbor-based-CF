@@ -9,7 +9,7 @@
 </head>
 <body>
     <nav>
-        <h1>Recommendation System</h1>
+        <h1>Recommendation System - History</h1>
         <a href="/history" style="color: white; text-decoration: none;"><i class="ri-history-line"></i></a>
     </nav>
     <form action="/search" method="post">
@@ -23,22 +23,21 @@
             <tr>
                 <th>Index</th>
                 <th>Item</th>
-                <th style="width: 25%; text-align: center;">Predicted Rating</th>
+                <th style="width: 25%; text-align: center;">Rating</th>
             </tr>
         </thead>
         <tbody>
-            {% for movie in recommended_movies %}
+            {% for movie in rated_movies %}
                 <tr>
                     <td>{{ movie.index }}</td>
-                    <td>
-                        <a href="/detail/{{ movie.id }}" style="text-decoration: none; color: black;">{{ movie.item }}
+                    <td> {{ movie.item }}
                         <div class="tags">
                             {% for tag in movie.tags %}
                                 <span>{{ tag }}</span>
                             {% endfor %}
                         </div>
                     </td>
-                    <td style="text-align: center;">{{ '{:.3f}'.format(movie.rating) }}</td>
+                    <td style="text-align: center;">{{ '{:.0f}'.format(movie.rating) }}</td>
                 </tr>
             {% endfor %}
         </tbody>

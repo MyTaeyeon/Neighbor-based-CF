@@ -21,15 +21,12 @@
     <table>
         <thead>
             <tr>
-                <th>Index</th>
                 <th>Item</th>
-                <th style="width: 25%; text-align: center;">Predicted Rating</th>
             </tr>
         </thead>
         <tbody>
-            {% for movie in recommended_movies %}
+            {% for movie in movies_name %}
                 <tr>
-                    <td>{{ movie.index }}</td>
                     <td>
                         <a href="/detail/{{ movie.id }}" style="text-decoration: none; color: black;">{{ movie.item }}
                         <div class="tags">
@@ -38,7 +35,6 @@
                             {% endfor %}
                         </div>
                     </td>
-                    <td style="text-align: center;">{{ '{:.3f}'.format(movie.rating) }}</td>
                 </tr>
             {% endfor %}
         </tbody>
