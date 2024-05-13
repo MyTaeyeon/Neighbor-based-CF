@@ -14,7 +14,7 @@ columns = ['Movie_id', 'Movie_name', 'Year', 'none', 'links', '0', '1', '2', '3'
 movies = pd.read_csv("./ml-100k/u.item", sep='|', names=columns, encoding='latin-1')
 
 last_movie = 0
-user_id = 10
+user_id = 15
 genre = ("Unknown", "Action", "Adventure", "Animation", "Children's", "Comedy", "Crime", "Documentary", "Drama", "Fantasy", "Film-Noir", "Horror", "Musical", "Mystery", "Romance", "Sci-Fi", "Thriller", "War", "Western")
 
 @app.route('/detail/<string:movie_index>')
