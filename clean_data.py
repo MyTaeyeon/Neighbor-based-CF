@@ -1,110 +1,101 @@
 import pandas as pd
+from sklearn.model_selection import train_test_split
+from CF import CF
 import numpy as np
-import os
-from datetime import datetime
+import matplotlib.pyplot as plt
 
-from sklearn.metrics import pairwise_distances
-from sklearn.preprocessing import OneHotEncoder
-from sklearn.metrics.pairwise import cosine_similarity
+# Khởi tạo danh sách để lưu trữ giá trị RMSE cho mỗi lần chạy
+rmse_user_list = []
+rmse_item_list = []
 
-pd.set_option('display.max_rows',50)
-pd.set_option('display.max_columns', 50)
+def stratified_train_test_split(data, test_size, random_state):
+    users = data['user_id'].unique()
+    items = data['item_id'].unique()
+    train_indices = []
+    test_indices = []
 
-info = pd.read_csv('.//ml-100k/u.info' , sep=" ", header = None)
-info.columns = ['Counts' , 'Type']
+    # Ensure each user appears in both training and testing set
+    for user in users:
+        user_data = data[data['user_id'] == user]
+        if len(user_data) > 1:
+            train_data, test_data = train_test_split(user_data, test_size=test_size, random_state=random_state)
+            train_indices.extend(train_data.index)
+            test_indices.extend(test_data.index)
+        else:
+            train_indices.extend(user_data.index)
 
-occupation = pd.read_csv('./ml-100k/u.occupation' , header = None)
-occupation.columns = ['Occupations']
+    train_data = data.loc[train_indices]
+    test_data = data.loc[test_indices]
 
-items = pd.read_csv('./ml-100k/u.item' , header = None , sep = "|" , encoding='latin-1')
-items.columns = ['movie id' , 'movie title' , 'release date' , 'video release date' ,
-              'IMDb URL' , 'unknown' , 'Action' , 'Adventure' , 'Animation' ,
-              'Childrens' , 'Comedy' , 'Crime' , 'Documentary' , 'Drama' , 'Fantasy' ,
-              'Film_Noir' , 'Horror' , 'Musical' , 'Mystery' , 'Romance' , 'Sci_Fi' ,
-              'Thriller' , 'War' , 'Western']
+    # Ensure all items are included
+    train_items = train_data['item_id'].unique()
+    test_items = test_data['item_id'].unique()
 
-data = pd.read_csv('./ml-100k/u.data', header= None , sep = '\t')
-user = pd.read_csv('./ml-100k/u.user', header= None , sep = '|')
-genre = pd.read_csv('./ml-100k/u.genre', header= None , sep = '|' )
+    missing_train_items = np.setdiff1d(items, train_items)
+    missing_test_items = np.setdiff1d(items, test_items)
 
-genre.columns = ['Genre' , 'genre_id']
-data.columns = ['user id' , 'movie id' , 'rating' , 'timestamp']
-user.columns = ['user id' , 'age' , 'gender' , 'occupation' , 'zip code']
+    for item in missing_train_items:
+        item_data = data[data['item_id'] == item]
+        if not item_data.empty:
+            train_indices.extend(item_data.index[:1])
 
-grouping_user = user
+    for item in missing_test_items:
+        item_data = data[data['item_id'] == item]
+        if not item_data.empty:
+            test_indices.extend(item_data.index[:1])
 
-# Merging the columns with data table to better visualise
-data = data.merge(user , on='user id')
-data = data.merge(items , on='movie id')
+    train_data = data.loc[train_indices].drop_duplicates()
+    test_data = data.loc[test_indices].drop_duplicates()
 
-# Data Cleaning for Model Based Recommandation System
-def convert_time(x):
-    return datetime.utcfromtimestamp(x).strftime('%d-%m-%Y')
+    return train_data, test_data
 
-def date_diff(date):
-    d1 = date['release date'].split('-')[2]
-    d2 = date['rating time'].split('-')[2]
-    return abs(int(d2) - int(d1))
+for i in range(1, 51):
+    # Tải dữ liệu từ file u.data
+    column_names = ['user_id', 'item_id', 'rating', 'timestamp']
+    data = pd.read_csv('./input/ml-100k/u.data', sep='\t', names=column_names)
 
-# data.drop(columns = ['movie title' , 'video release date' , 'IMDb URL'] , inplace = True)
-data.dropna(subset = ['release date'] , inplace = True)
+    # Chia dữ liệu với tỷ lệ 75% training và 25% testing
+    training_data, testing_data = stratified_train_test_split(data, test_size=0.5, random_state=i)
 
-user_details = data.groupby('user id').size().reset_index()
-user_details.columns = ['user id' , 'number of user ratings']
-data = data.merge(user_details , on='user id')
+    # Chuyển đổi indices bắt đầu từ 0
+    training_data.iloc[:, :2] -= 1
+    testing_data.iloc[:, :2] -= 1
 
-movie_details = data.groupby('movie id').size().reset_index()
-movie_details.columns = ['movie id' , 'number of movie ratings']
-data = data.merge(movie_details , on='movie id')
+    # User-based CF
+    rs = CF(training_data.to_numpy(), k=30, uuCF=1)
+    rs.fit()
 
-user_details = data.groupby('user id')['rating'].agg('mean').reset_index()
-user_details.columns = ['user id' , 'average of user ratings']
-data = data.merge(user_details , on='user id')
+    n_tests = testing_data.shape[0]
+    SE = 0  # squared error
+    for n in range(n_tests):
+        pred = rs.pred(testing_data.iloc[n, 0], testing_data.iloc[n, 1], normalized=0)
+        SE += (pred - testing_data.iloc[n, 2]) ** 2
 
-movie_details = data.groupby('movie id')['rating'].agg('mean').reset_index()
-movie_details.columns = ['movie id' , 'average of movie ratings']
-data = data.merge(movie_details , on='movie id')
+    RMSE_user = np.sqrt(SE / n_tests)
+    rmse_user_list.append(RMSE_user)
 
+    # Item-based CF
+    rs = CF(training_data.to_numpy(), k=30, uuCF=0)
+    rs.fit()
 
-user_details = data.groupby('user id')['rating'].agg('std').reset_index()
-user_details.columns = ['user id' , 'std of user ratings']
-data = data.merge(user_details , on='user id')
+    SE = 0  # squared error
+    for n in range(n_tests):
+        pred = rs.pred(testing_data.iloc[n, 0], testing_data.iloc[n, 1], normalized=0)
+        SE += (pred - testing_data.iloc[n, 2]) ** 2
 
-movie_details = data.groupby('movie id')['rating'].agg('std').reset_index()
-movie_details.columns = ['movie id' , 'std of movie ratings']
-data = data.merge(movie_details , on='movie id')
+    RMSE_item = np.sqrt(SE / n_tests)
+    rmse_item_list.append(RMSE_item)
+    print(i, "completed!")
 
-data['age_group'] = data['age']//10
-data['rating time'] = data.timestamp.apply(convert_time)
-data['time difference'] = data[['release date' , 'rating time']].apply(date_diff, axis =1)
+# Vẽ đồ thị
+plt.figure(figsize=(12, 6))
+plt.plot(range(1, 51), rmse_user_list, label='User-based CF', color='deepskyblue')
+plt.plot(range(1, 51), rmse_item_list, label='Item-based CF', color='red')
+plt.xlabel('Iteration')
+plt.ylabel('RMSE')
+plt.title('RMSE over 50 Iterations for User-based and Item-based CF')
+plt.legend()
 
-data['total rating'] = (data['number of user ratings']*data['average of user ratings'] + data['number of movie ratings']*data['average of movie ratings'])/(data['number of movie ratings']+data['number of user ratings'])
-data['rating_new'] = data['rating'] - data['total rating']
-
-del movie_details
-del user_details
-
-pivot_table_user = pd.pivot_table(data=data,values='rating_new',index='user id',columns='movie id')
-pivot_table_user = pivot_table_user.fillna(0)
-pivot_table_movie = pd.pivot_table(data=data,values='rating',index='user id',columns='movie id')
-pivot_table_movie = pivot_table_movie.fillna(0)
-
-user_based_similarity = 1 - pairwise_distances(pivot_table_user.values, metric="cosine")
-movie_based_similarity = 1 - pairwise_distances(pivot_table_movie.T.values, metric="cosine")
-
-user_based_similarity = pd.DataFrame(user_based_similarity)
-user_based_similarity.columns = user_based_similarity.columns+1
-user_based_similarity.index = user_based_similarity.index+1
-
-movie_based_similarity = pd.DataFrame(movie_based_similarity)
-movie_based_similarity.columns = movie_based_similarity.columns+1
-movie_based_similarity.index = movie_based_similarity.index+1
-
-def rec_movie(movie_id, num_movies=10):
-    temp_table = pd.DataFrame(columns=items.columns)
-    movies = movie_based_similarity[movie_id].sort_values(ascending=False).index.tolist()[:num_movies + 1]
-    for mov in movies:
-        temp_table = pd.concat([temp_table, items[items['movie id'] == mov]], ignore_index=True)
-    return temp_table
-
-print(rec_movie(500))
+# Lưu đồ thị vào file PNG
+plt.savefig('rmse_comparison.png')
+print("Đồ thị đã được lưu vào file 'rmse_comparison.png'.")
