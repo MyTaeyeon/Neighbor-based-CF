@@ -54,10 +54,8 @@ for i in range(1, 51):
     column_names = ['user_id', 'item_id', 'rating', 'timestamp']
     data = pd.read_csv('./input/ml-100k/u.data', sep='\t', names=column_names)
 
-    # Chia dữ liệu với tỷ lệ 75% training và 25% testing
     training_data, testing_data = stratified_train_test_split(data, test_size=0.5, random_state=i)
 
-    # Chuyển đổi indices bắt đầu từ 0
     training_data.iloc[:, :2] -= 1
     testing_data.iloc[:, :2] -= 1
 
